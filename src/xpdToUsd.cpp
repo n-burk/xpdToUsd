@@ -1,4 +1,7 @@
-// xpdToUsd.cpp : This 
+// xpdToUsd.cpp : This tool converts Autodesk Xgen Xpd to Pixar UsdBasisCurve Geometry
+// Args:
+//      string: path to xpd bake down
+//      string: path to save out usd file
 //
 #define NOMINMAX
 #define TBB_USE_ASSERT 0
@@ -16,7 +19,6 @@
 #include <pxr/usd/usdGeom/basisCurves.h>
 
 #include <iostream>
-#include <filesystem>
 
 using namespace std;
 
@@ -40,17 +42,10 @@ int main(int argc, char* argv[])
     pxr::VtArray<pxr::GfVec3f> points;
     pxr::VtArray<int> vertexCounts;
 
-    // Put out the file header
-    //xpd->print(cout);
-    
-
     while (xpd->nextFace()) {
-
-        // Put out the face header
         while (xpd->nextBlock()) {
             safevector<float> data;
             while (xpd->readPrim(data)) {
-                // Dump out the data
                 for (unsigned int i = 0; i < xpd->numCVs(); i++) {
                     pxr::GfVec3f point;                    
                     for (unsigned int j = 0; j < 3; j++) {
