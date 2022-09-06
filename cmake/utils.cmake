@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 include(CMakeParseArguments)
-message(STATUS "HERE@ ${CMAKE_SYSTEM_NAME}")
 # The name of the operating system for which CMake is to build
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(IS_WINDOWS TRUE)
