@@ -105,6 +105,20 @@ find_library(USD_LIBRARY
         "Main USD library"
 )
 
+
+find_file(USD_SHARED_LIBRARY
+    NAMES
+        ${CMAKE_SHARED_LIBRARY_SUFFIX}
+    HINTS
+        ${PXR_USD_LOCATION}
+        $ENV{PXR_USD_LOCATION}
+    PATH_SUFFIXES
+        lib
+    DOC
+        "Main USD library"
+)
+
+file(GLOB USD_SHARED_LIBS ${PXR_USD_LOCATION}/lib/*.dll)
 get_filename_component(USD_LIBRARY_DIR ${USD_LIBRARY} DIRECTORY)
 
 # Get the boost version from the one built with USD

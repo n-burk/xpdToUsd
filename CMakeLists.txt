@@ -9,7 +9,7 @@ set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH}
     ${CMAKE_SOURCE_DIR}/cmake/modules
 )
-find_package(Maya 2023 REQUIRED)
+find_package(Maya 2018 REQUIRED)
 find_package(USD 0.20.05 REQUIRED)
 
 
@@ -46,3 +46,16 @@ vt
 ${MAYA_LIBRARIES}
 ${MAYA_XGEN_LIBRARY}
 )
+
+add_custom_command(OUTPUT AdskXpd.dll
+DEPENDS ${MAYA_LOCATION}plug-ins/xgen/bin/AdskXpd.dll
+COMMENT "copying xpd dll"
+COMMAND ${CMAKE_COMMAND} -E copy ${MAYA_LOCATION}plug-ins/xgen/bin/AdskXpd.dll AdskXpd.dll)
+
+foreach(LIB ${USD_SHARED_LIBS})
+    get_filename_component(LIB_NAME ${LIB} NAME)
+    add_custom_command(OUTPUT ${LIB_NAME}
+    DEPENDS ${LIB}
+    COMMENT "copying ${LIB_NAME} dll"
+    COMMAND ${CMAKE_COMMAND} -E copy ${LIB} ${LIB_NAME})
+endforeach()

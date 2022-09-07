@@ -77,7 +77,6 @@ elseif(IS_WINDOWS)
 else(IS_LINUX)
     set(MAYA_PLUGIN_SUFFIX ".so")
 endif()
-message(STATUS "HERE")
 if(IS_MACOSX)
     # On OSX, setting MAYA_LOCATION to either the base installation dir (ie,
     # `/Application/Autodesk/maya20xx`), or the Contents folder in the Maya.app dir
@@ -137,7 +136,6 @@ elseif(IS_LINUX)
             "Maya's libraries path"
     )
 elseif(IS_WINDOWS)
-    message(STATUS "test")
     find_path(MAYA_BASE_DIR
             include/maya/MFn.h
         HINTS
