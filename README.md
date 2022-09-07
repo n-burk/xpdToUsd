@@ -9,7 +9,7 @@ Autodesk Xgen Xpd to Usd curve conversion tool. Converts curve grooms baked down
 
 ## Usage
 
-xpdToUsd <pathToXpd> <pathToUsd_output>
+xpdToUsd pathToXpd pathToUsd_output
 
 ## Exporting xpd from xgen
 
