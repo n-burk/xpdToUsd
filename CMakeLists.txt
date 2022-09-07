@@ -47,15 +47,24 @@ ${MAYA_LIBRARIES}
 ${MAYA_XGEN_LIBRARY}
 )
 
-add_custom_command(OUTPUT AdskXpd.dll
-DEPENDS ${MAYA_LOCATION}plug-ins/xgen/bin/AdskXpd.dll
+#adding default build type
+if(NOT DEFINED CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+add_custom_command(TARGET xpdToUsd
+PRE_LINK
 COMMENT "copying xpd dll"
-COMMAND ${CMAKE_COMMAND} -E copy ${MAYA_LOCATION}plug-ins/xgen/bin/AdskXpd.dll AdskXpd.dll)
+COMMAND ${CMAKE_COMMAND}
+VERBATIM
+ARGS -E copy ${MAYA_BASE_DIR}/plug-ins/xgen/bin/AdskXpd.dll $<TARGET_FILE_DIR:xpdToUsd>/AdskXpd.dll)
 
 foreach(LIB ${USD_SHARED_LIBS})
     get_filename_component(LIB_NAME ${LIB} NAME)
-    add_custom_command(OUTPUT ${LIB_NAME}
-    DEPENDS ${LIB}
+    add_custom_command(TARGET xpdToUsd
+    PRE_LINK
     COMMENT "copying ${LIB_NAME} dll"
-    COMMAND ${CMAKE_COMMAND} -E copy ${LIB} ${LIB_NAME})
+    VERBATIM
+    COMMAND ${CMAKE_COMMAND}
+    ARGS -E copy ${LIB} $<TARGET_FILE_DIR:xpdToUsd>/${LIB_NAME})
 endforeach()
