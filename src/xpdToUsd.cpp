@@ -17,6 +17,7 @@
 #include <pxr/base/gf/vec3f.h>
 #include <pxr/usd/usd/attribute.h>
 #include <pxr/usd/usdGeom/basisCurves.h>
+#include <pxr/usd/usdGeom/tokens.h>
 
 #include <iostream>
 
@@ -38,6 +39,7 @@ int main(int argc, char* argv[])
     pxr::UsdAttribute vertexCountsAttr = curves.GetCurveVertexCountsAttr();
     pxr::UsdAttribute pointsAttr = curves.GetPointsAttr();
     pxr::UsdAttribute widthsAttr = curves.GetWidthsAttr();
+    pxr::UsdAttribute typeAttr = curves.GetTypeAttr();
     pxr::VtArray<float> widths;
     pxr::VtArray<pxr::GfVec3f> points;
     pxr::VtArray<int> vertexCounts;
@@ -60,7 +62,8 @@ int main(int argc, char* argv[])
     }
     vertexCountsAttr.Set(vertexCounts, pxr::UsdTimeCode::Default());
     pointsAttr.Set(points, pxr::UsdTimeCode::Default());
-
+    typeAttr.Set(pxr::UsdGeomTokensType().linear, pxr::UsdTimeCode::Default());
+    
     xpd->close();
     stage->Save();
     cout << endl << "Success." << endl;
