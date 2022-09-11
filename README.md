@@ -18,11 +18,11 @@ xpdToUsd pathToUsd pathToXpd_output primPath
 ## Note about Usd->Xpd conversion
 Xpd is a very "growth geometry centric" format as the end client is xgen, an instancing software. So some special attributes need to exist on the basisCurve before conversion. These attributes will exist inside the Usd geometry upon xpd->Usd conversion
 
-xpd:faceIds - VtArray<int>
+xpd:faceIds - VtArray<int> (per curve face index curve root lands on)
   
-xpd:uvLocations - VtArray<GfVec3f> (we toss the third element as this is just barycentric coordinates of a face)
+xpd:uvLocations - VtArray<GfVec3f> (per curve face coordinate curve root lands on. We toss the third element as this is just barycentric coordinates of a face)
 
-
+**Xgen requires a uniform cv count on every curve**
 
 ## Exporting xpd from xgen
 
