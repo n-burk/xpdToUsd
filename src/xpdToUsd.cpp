@@ -46,11 +46,12 @@ void xpd2Usd(std::string& xpdPath, std::string& outputUsdPath) {
     // preserving faceIdAttribute
     pxr::UsdAttribute faceIdAttr = curves.GetPrim().CreateAttribute(pxr::TfToken(FACEIDATTRNAME), pxr::SdfValueTypeNames->IntArray);
     // preservering uvLocationAttr
-    pxr::UsdAttribute uvLocAttr = curves.GetPrim().CreateAttribute(pxr::TfToken(FACEIDATTRNAME), pxr::SdfValueTypeNames->Vector3fArray);
+    pxr::UsdAttribute uvLocAttr = curves.GetPrim().CreateAttribute(pxr::TfToken(UVLOCATIONS), pxr::SdfValueTypeNames->Vector3fArray);
     pxr::VtArray<float> widths;
     pxr::VtArray<pxr::GfVec3f> points;
     pxr::VtArray<int> vertexCounts;
     pxr::VtArray<int> faceIds;
+    pxr::VtArray<pxr::GfVec3f> uvLocArray;
     while (xpd->nextFace()) {
         int face = xpd->faceid();
         while (xpd->nextBlock()) {
@@ -59,13 +60,17 @@ void xpd2Usd(std::string& xpdPath, std::string& outputUsdPath) {
                 for (unsigned int i = 0; i < xpd->numCVs(); i++) {
                     pxr::GfVec3f point;
                     for (unsigned int j = 0; j < 3; j++) {
-                        point[j] = i == 0 ? data[3 + j] : data[(i * 3) + j];
+                        point[j] = data[(i * 3) + j + 3];
                     }
                     points.push_back(point);
                 }
+                pxr::GfVec3f uvLoc;
+                uvLoc[0] = data[1];
+                uvLoc[1] = data[2];
                 widths.push_back(1.0);
                 vertexCounts.push_back(xpd->numCVs());
                 faceIds.push_back(face);
+                uvLocArray.push_back(uvLoc);
             }
         }
     }
@@ -73,6 +78,7 @@ void xpd2Usd(std::string& xpdPath, std::string& outputUsdPath) {
     pointsAttr.Set(points, pxr::UsdTimeCode::Default());
     typeAttr.Set(pxr::UsdGeomTokensType().linear, pxr::UsdTimeCode::Default());
     faceIdAttr.Set(faceIds, pxr::UsdTimeCode::Default());
+    uvLocAttr.Set(uvLocArray, pxr::UsdTimeCode::Default());
     xpd->close();
     stage->Save();
     return;
