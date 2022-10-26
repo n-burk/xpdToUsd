@@ -18,6 +18,7 @@
 #include <pxr/base/gf/vec3f.h>
 #include <pxr/usd/usd/attribute.h>
 #include <pxr/usd/usdGeom/basisCurves.h>
+#include <pxr/usd/usdGeom/points.h>
 #include <pxr/usd/usdGeom/tokens.h>
 
 #include <iostream>
@@ -25,10 +26,12 @@
 #include <vector>
 #include <map>
 
+namespace bp = boost::python;
 using namespace std;
 
 const char* FACEIDATTRNAME = "xpd:faceIds"; 
 const char* UVLOCATIONS = "xpd:uvLocations";
+const char* XUVIDS = "xpd:xuvids";
 
 void xpd2Usd(std::string& xpdPath, std::string& outputUsdPath) {
     XpdReader* xpd;
@@ -85,7 +88,7 @@ void xpd2Usd(std::string& xpdPath, std::string& outputUsdPath) {
 }
 
 void usd2Xpd(std::string& usdPath, std::string& outputXpdPath, std::string& primPath) {
-    // xpd is a face centric geometry format. Usd is not
+    // xpd is a subdivision patch/face centric geometry format. Usd is not
     pxr::UsdStageRefPtr stage = pxr::UsdStage::Open(usdPath);
     pxr::UsdPrim prim = stage->GetPrimAtPath(pxr::SdfPath(primPath));
     if (!prim.IsValid()) {
@@ -180,6 +183,140 @@ void usd2Xpd(std::string& usdPath, std::string& outputXpdPath, std::string& prim
     return;
 }
 
+void xuv2Usd(std::string& xpdPath, std::string& outputUsdPath) {
+    XpdReader* xpd;
+    xpd = XpdReader::open(xpdPath.c_str());
+    if (!xpd) {
+        cerr << "Failed to open xuv file: " << xpdPath << endl;
+        return;
+    }
+    pxr::UsdStageRefPtr stage = pxr::UsdStage::CreateNew(outputUsdPath);
+    // Get the index for the "Location" block.
+    auto _blockIndex = xpd->blockIndex("Location");
+    if (_blockIndex < 0) {
+        cerr << "Failed to find the Location block in file: "
+            << endl;
+    }
+    pxr::UsdGeomPoints ptsPrim = pxr::UsdGeomPoints::Define(stage, pxr::SdfPath("/xpdConvert/xuvPoints"));
+    pxr::VtArray<pxr::GfVec3f> uvLocations;
+    pxr::VtArray<pxr::GfVec3f> points;
+    pxr::VtArray<int> faceIds;
+    pxr::VtArray<int> Ids;
+    pxr::UsdAttribute pointsAttr = ptsPrim.GetPointsAttr();
+    // preserving faceIdAttribute
+    pxr::UsdAttribute faceIdAttr = ptsPrim.GetPrim().CreateAttribute(pxr::TfToken(FACEIDATTRNAME), pxr::SdfValueTypeNames->IntArray);
+    // preservering uvLocationAttr
+    pxr::UsdAttribute uvLocAttr = ptsPrim.GetPrim().CreateAttribute(pxr::TfToken(UVLOCATIONS), pxr::SdfValueTypeNames->Vector3fArray);
+    pxr::UsdAttribute idAttr = ptsPrim.GetPrim().CreateAttribute(pxr::TfToken(XUVIDS), pxr::SdfValueTypeNames->IntArray);
+    while (xpd->nextFace()) {
+        auto blocks = xpd->blocks();
+        xpd->findBlock(_blockIndex);
+        int face = xpd->faceid();
+        int numPts = xpd->numPrims();
+        safevector<float> data;
+        pxr::GfVec3f uvLoc;
+        for (unsigned int i = 0; i < numPts; i++) {
+            xpd->readPrim(data);
+            pxr::GfVec3f point;
+            faceIds.push_back(face);
+            Ids.push_back((int)(data[0]));
+            uvLoc[0] = data[1];
+            uvLoc[1] = data[2];
+            uvLocations.push_back(uvLoc);
+            point[0] = double(data[3]);
+            point[1] = double(data[4]);
+            point[2] = double(data[5]);
+            points.push_back(point);
+        }
+    }
+    pointsAttr.Set(points, pxr::UsdTimeCode::Default());
+    faceIdAttr.Set(faceIds, pxr::UsdTimeCode::Default());
+    uvLocAttr.Set(uvLocations, pxr::UsdTimeCode::Default());
+    idAttr.Set(Ids, pxr::UsdTimeCode::Default());
+    xpd->close();
+    stage->Save();
+    return;
+
+}
+
+void usd2Xuv(std::string& usdPath, std::string& outputXuvPath, std::string& primPath) {
+    // xpd is a subdivision patch/face centric geometry format. Usd is not
+    pxr::UsdStageRefPtr stage = pxr::UsdStage::Open(usdPath);
+    pxr::UsdPrim prim = stage->GetPrimAtPath(pxr::SdfPath(primPath));
+    if (!prim.IsValid()) {
+        printf("%s is an invalid prim path. Exiting...", primPath.c_str());
+        return;
+    }
+    safevector<string> blocks(1, "Location");
+    pxr::UsdGeomPoints ptsPrim = pxr::UsdGeomPoints(prim);
+    pxr::VtArray<int> faceIds;
+    pxr::VtArray<int> ids;
+    pxr::VtArray<pxr::GfVec3f> points;
+    pxr::VtArray<pxr::GfVec3f> uvLocations;
+    ptsPrim.GetPointsAttr().Get(&points, pxr::UsdTimeCode::Default());
+    ptsPrim.GetPrim().GetAttribute(pxr::TfToken(FACEIDATTRNAME)).Get(&faceIds, pxr::UsdTimeCode::Default());
+    ptsPrim.GetPrim().GetAttribute(pxr::TfToken(UVLOCATIONS)).Get(&uvLocations, pxr::UsdTimeCode::Default());
+    ptsPrim.GetPrim().GetAttribute(pxr::TfToken(XUVIDS)).Get(&ids, pxr::UsdTimeCode::Default());
+
+    safevector<std::string> keys;
+    pxr::VtArray<int> uniqueFaces;
+    for (auto& face : faceIds) {
+        if (std::find(uniqueFaces.begin(), uniqueFaces.end(), face) == uniqueFaces.end())
+            uniqueFaces.push_back(face);
+    }
+    XpdWriter* xFile = XpdWriter::open(outputXuvPath, uniqueFaces.size(), Xpd::Point, 1, Xpd::World, blocks, 0.0, 1);
+    if (!xFile) {
+        printf("%s : Failed to create XPD file. Exiting...", outputXuvPath.c_str());
+        return;
+    }
+
+    // organize data by faceIds
+    std::map<int, std::vector<int>> faceMap;
+    for (auto& index : faceIds) {
+        auto faceFind = faceMap.find(index);
+        if (faceFind == faceMap.end()) {
+            std::pair<int, std::vector<int>> faceIdPair = { index, {} };
+            faceMap.emplace(faceIdPair);
+        }
+    }
+    // loop through faceIds and organize
+    for (int i = 0; i < faceIds.size(); i++) {
+        faceMap[faceIds[i]].push_back(i);
+    }
+    unsigned int id = 0;
+    for (const auto& [faceId, ptIndices] : faceMap) {
+        for (int i = 0; i < ptIndices.size(); i++) {
+            if (!xFile->startFace(i)) {
+                printf("failed to start face in XPD file: %s", outputXuvPath.c_str());
+                return;
+            }
+            else if (!xFile->startBlock()) {
+                printf("failed to start black in XPD file: %s", outputXuvPath.c_str());
+                return;
+            }
+
+
+            for (int j : ptIndices) {
+                safevector<float> primData;
+                // face id
+                primData.push_back((float)id++);
+                // uv location data
+                primData.push_back(uvLocations[j][0]);
+                primData.push_back(uvLocations[j][1]);
+                for (int k = 0; k < 3; k++) {
+                    primData.push_back((float)points[(j)][k]);
+                }
+                xFile->writePrim(primData);
+            }
+        }
+    }
+
+    xFile->close();
+    return;
+}
+
+
+
 int main(int argc, char* argv[])
 {
     std::string inFilePath = argv[1];
@@ -191,9 +328,16 @@ int main(int argc, char* argv[])
     }
     if (path.extension() == ".usd" || path.extension() == ".usda" || path.extension() == ".usdc") {
         std::string primPath = argv[3];
-        usd2Xpd(inFilePath, outputPath, primPath);
+        filesystem::path path = outputPath;
+        if (path.extension() == ".xpd")
+            usd2Xpd(inFilePath, outputPath, primPath);
+        else if (path.extension() == ".xuv")
+            usd2Xuv(inFilePath, outputPath, primPath);
+    }
+    if (path.extension().string() == ".xuv") {
+        xuv2Usd(inFilePath, outputPath);
     }
  
     cout << endl << "Success." << endl;
-
+    return 0;
 }
