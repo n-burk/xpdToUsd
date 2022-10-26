@@ -36,6 +36,10 @@ xpd:uvLocations - VtArray(GfVec3f) : per curve OSD patch uv coordinate curve roo
 
 In Xgen, change renderer to Xpd and point to a directory and hit "Create Xpd File" to generate file
 
+## Xgen data from scratch examples:
+
+Houdini/Blender examples forthcoming
+
 ## Dependencies:
 
 Xpd - Shipped with Autodesk Maya
