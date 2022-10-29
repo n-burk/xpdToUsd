@@ -11,19 +11,19 @@ Autodesk Xgen Xpd to Usd curve conversion tool. Converts curve grooms baked down
 
 xpd2Usd
 
-xpdToUsd pathToXpd pathToUsd_output
+:>xpdToUsd pathToXpd pathToUsd_output
 
 usd2Xpd
 
-xpdToUsd pathToUsd pathToXpd_output primPath
+:>xpdToUsd pathToUsd pathToXpd_output primPath
 
 xuv2Usd
 
-xpdToUsd pathToXuv pathToUsd_output
+:>xpdToUsd pathToXuv pathToUsd_output
 
 usd2Xuv
 
-xpdToUsd pathToUsd pathToXuv_output primPath
+:>xpdToUsd pathToUsd pathToXuv_output primPath
 
 ## Note about Usd->Xpd conversion
 Xpd is a very "growth geometry centric" format as the end client is xgen, an instancing software. So some special attributes need to exist on the basisCurve before conversion. These attributes will exist inside the Usd geometry upon xpd->Usd conversion
